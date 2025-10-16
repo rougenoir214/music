@@ -67,17 +67,17 @@
                     <div class="mb-5">
                         <h3 class="text-white font-bold mb-2">📅 年代別J-POP</h3>
                         <div class="grid grid-cols-2 gap-2 mb-3">
-                            <button onclick="startThemeQuiz('1980 1989 日本 ヒット曲')" class="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎸 80年代</button>
-                            <button onclick="startThemeQuiz('1990 1999 日本 ヒット曲')" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">💿 90年代</button>
-                            <button onclick="startThemeQuiz('2000 2009 日本 ヒット曲')" class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎵 2000年代</button>
-                            <button onclick="startThemeQuiz('2010 2019 日本 ヒット曲')" class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎤 2010年代</button>
-                            <button onclick="startThemeQuiz('2020 日本 最新 ヒット曲')" class="bg-gradient-to-r from-cyan-500 to-teal-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🌟 2020年代</button>
+                            <button onclick="startDecadeQuiz(1980, 1989)" class="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎸 80年代</button>
+                            <button onclick="startDecadeQuiz(1990, 1999)" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">💿 90年代</button>
+                            <button onclick="startDecadeQuiz(2000, 2009)" class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎵 2000年代</button>
+                            <button onclick="startDecadeQuiz(2010, 2019)" class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎤 2010年代</button>
+                            <button onclick="startDecadeQuiz(2020, 2025)" class="bg-gradient-to-r from-cyan-500 to-teal-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🌟 2020年代</button>
                         </div>
                         <h3 class="text-white font-bold mb-2">🎭 ジャンル別</h3>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="startThemeQuiz('アニメソング 人気')" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎬 アニメ</button>
-                            <button onclick="startThemeQuiz('洋楽 ヒット曲')" class="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🌍 洋楽</button>
-                            <button onclick="startThemeQuiz('童謡 日本 子供の歌')" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">👶 童謡</button>
+                            <button onclick="startThemeQuiz('アニメソング')" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🎬 アニメ</button>
+                            <button onclick="startThemeQuiz('洋楽')" class="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">🌍 洋楽</button>
+                            <button onclick="startThemeQuiz('童謡')" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-3 py-3 rounded-xl font-bold mobile-btn text-sm">👶 童謡</button>
                         </div>
                     </div>
                     
@@ -222,8 +222,8 @@
             resultsDiv.innerHTML = '<p class="text-white text-center py-4">🔍 検索中...</p>';
             
             try {
-                // 検索件数を30件に制限（曲数が多いアーティスト対策）
-                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=30`;
+                // 検索件数を20件に制限（iPhone安定性向上）
+                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=20&country=JP`;
                 const data = await fetchJsonp(url);
                 
                 if (!data.results || data.results.length === 0) {
@@ -320,8 +320,8 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">🔍 「${theme}」を検索中...</p>`;
             
             try {
-                // 検索件数を30件に制限（安定性向上）
-                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(theme)}&media=music&limit=30`;
+                // 検索件数を20件に制限（さらに安定性向上）
+                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(theme)}&media=music&limit=20&country=JP`;
                 const data = await fetchJsonp(url);
                 
                 const songsWithPreview = data.results.filter(song => song.previewUrl);
@@ -336,6 +336,47 @@
                 selectedSongs = shuffleArray([...songsWithPreview]).slice(0, numSongs);
                 updateSelectedSongsList();
                 resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">✅ ${selectedSongs.length}曲を選択！</p>`;
+                setTimeout(startQuiz, 1000);
+            } catch (error) {
+                alert(`検索に失敗しました: ${error.message}`);
+                resultsDiv.innerHTML = '';
+            }
+        }
+
+        // 年代別クイズ（リリース年でフィルタリング）
+        async function startDecadeQuiz(startYear, endYear) {
+            if (players.length === 0) {
+                alert('プレイヤーを追加してください');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">🔍 ${startYear}年代の曲を検索中...</p>`;
+            
+            try {
+                // 日本の人気曲を多めに取得
+                const url = `https://itunes.apple.com/search?term=日本 ヒット曲&media=music&limit=200&country=JP`;
+                const data = await fetchJsonp(url);
+                
+                // リリース年でフィルタリング
+                const songsInDecade = data.results.filter(song => {
+                    if (!song.previewUrl || !song.releaseDate) return false;
+                    const releaseYear = new Date(song.releaseDate).getFullYear();
+                    return releaseYear >= startYear && releaseYear <= endYear;
+                });
+                
+                console.log(`${startYear}年代の曲: ${songsInDecade.length}曲見つかりました`);
+                
+                if (songsInDecade.length === 0) {
+                    alert(`${startYear}年代の曲が見つかりませんでした。別の年代を試してください。`);
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+                
+                const numSongs = Math.min(10, songsInDecade.length);
+                selectedSongs = shuffleArray([...songsInDecade]).slice(0, numSongs);
+                updateSelectedSongsList();
+                resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">✅ ${startYear}年代の曲を${selectedSongs.length}曲選択！</p>`;
                 setTimeout(startQuiz, 1000);
             } catch (error) {
                 alert(`検索に失敗しました: ${error.message}`);
