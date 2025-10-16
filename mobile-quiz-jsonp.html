@@ -354,31 +354,57 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">🔍 ${startYear}年代の曲を検索中...</p>`;
             
             try {
-                // 日本の人気曲を多めに取得
-                const url = `https://itunes.apple.com/search?term=日本 ヒット曲&media=music&limit=200&country=JP`;
-                const data = await fetchJsonp(url);
+                // 年代別の検索クエリを複数用意
+                const searchQueries = [
+                    `${startYear}年代 日本`,
+                    `${startYear} ${endYear} ヒット`,
+                    `${startYear}s 邦楽`
+                ];
                 
-                // リリース年でフィルタリング
-                const songsInDecade = data.results.filter(song => {
-                    if (!song.previewUrl || !song.releaseDate) return false;
-                    const releaseYear = new Date(song.releaseDate).getFullYear();
-                    return releaseYear >= startYear && releaseYear <= endYear;
-                });
+                let allSongs = [];
                 
-                console.log(`${startYear}年代の曲: ${songsInDecade.length}曲見つかりました`);
+                // 複数のクエリで検索（モバイル版は軽量化のため少なめ）
+                for (let query of searchQueries) {
+                    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=30&country=JP`;
+                    const data = await fetchJsonp(url, 15000); // タイムアウト15秒
+                    
+                    // プレビュー可能な曲をフィルタリング
+                    const validSongs = data.results.filter(song => {
+                        if (!song.previewUrl) return false;
+                        
+                        // releaseDate があれば年代チェック
+                        if (song.releaseDate) {
+                            const releaseYear = new Date(song.releaseDate).getFullYear();
+                            return releaseYear >= startYear && releaseYear <= endYear;
+                        }
+                        
+                        // releaseDate がない場合は含める（検索クエリで絞っているため）
+                        return true;
+                    });
+                    
+                    allSongs = allSongs.concat(validSongs);
+                }
                 
-                if (songsInDecade.length === 0) {
+                // 重複を削除
+                const uniqueSongs = allSongs.filter((song, index, self) =>
+                    index === self.findIndex(s => s.trackId === song.trackId)
+                );
+                
+                console.log(`${startYear}年代の曲: ${uniqueSongs.length}曲見つかりました`);
+                
+                if (uniqueSongs.length === 0) {
                     alert(`${startYear}年代の曲が見つかりませんでした。別の年代を試してください。`);
                     resultsDiv.innerHTML = '';
                     return;
                 }
                 
-                const numSongs = Math.min(10, songsInDecade.length);
-                selectedSongs = shuffleArray([...songsInDecade]).slice(0, numSongs);
+                const numSongs = Math.min(10, uniqueSongs.length);
+                selectedSongs = shuffleArray([...uniqueSongs]).slice(0, numSongs);
                 updateSelectedSongsList();
                 resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">✅ ${startYear}年代の曲を${selectedSongs.length}曲選択！</p>`;
                 setTimeout(startQuiz, 1000);
             } catch (error) {
+                console.error('年代検索エラー:', error);
                 alert(`検索に失敗しました: ${error.message}`);
                 resultsDiv.innerHTML = '';
             }
