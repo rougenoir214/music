@@ -435,27 +435,21 @@
                 let url;
                 
                 if (searchType === 'artist') {
-                    url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&attribute=artistTerm&limit=200&country=JP`;
+                    // シンプルなリクエストに変更（iPhoneでの接続安定性向上）
+                    url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=50`;
                 } else {
-                    url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&attribute=songTerm&limit=50&country=JP`;
+                    url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=50`;
                 }
                 
                 console.log('検索URL:', url);
                 console.log('リトライ回数:', retryCount);
                 
-                // タイムアウト設定（30秒）
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
-                
+                // シンプルなfetchリクエスト（iPhoneでの互換性向上）
                 const response = await fetch(url, {
                     method: 'GET',
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    mode: 'cors',
+                    cache: 'default'
                 });
-                
-                clearTimeout(timeoutId);
                 
                 console.log('レスポンスステータス:', response.status);
                 
@@ -614,24 +608,17 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4 text-sm">🔍 「${theme}」を検索中...</p>`;
             
             try {
-                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(theme)}&media=music&entity=song&limit=50&country=JP`;
+                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(theme)}&media=music&limit=50`;
                 
                 console.log('テーマ検索URL:', url);
                 console.log('リトライ回数:', retryCount);
                 
-                // タイムアウト設定（30秒）
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
-                
+                // シンプルなfetchリクエスト
                 const response = await fetch(url, {
                     method: 'GET',
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    mode: 'cors',
+                    cache: 'default'
                 });
-                
-                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
