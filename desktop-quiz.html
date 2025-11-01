@@ -162,18 +162,12 @@
                         </div>
                         
                         <h3 class="text-white font-bold mb-3 text-lg">🎭 ジャンル別</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-2 gap-3">
                             <button 
                                 onclick="startThemeQuiz('アニメソング')"
                                 class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-xl font-bold hover:shadow-xl transition-all transform hover:scale-105"
                             >
                                 🎬 アニメソング
-                            </button>
-                            <button 
-                                onclick="startThemeQuiz('洋楽')"
-                                class="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-3 rounded-xl font-bold hover:shadow-xl transition-all transform hover:scale-105"
-                            >
-                                🌍 洋楽ヒット
                             </button>
                             <button 
                                 onclick="startThemeQuiz('童謡')"
@@ -609,7 +603,9 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4">🔍 「${theme}」を検索中...</p>`;
             
             try {
-                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(theme)}&media=music&limit=50&country=JP`;
+                // テーマ検索に「日本」を追加して邦楽限定に
+                const searchTerm = `${theme} 日本`;
+                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&limit=50&country=JP`;
                 
                 console.log('テーマ検索URL:', url);
                 
@@ -643,13 +639,13 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4">🔍 ${startYear}年代の曲を検索中...</p>`;
             
             try {
-                // デスクトップ版：複数のクエリで幅広く検索
+                // デスクトップ版：複数のクエリで幅広く検索（邦楽限定）
                 const searchQueries = [
                     `${startYear}年代 日本 ヒット`,
                     `${startYear} ${endYear} 邦楽`,
                     `${startYear}s J-POP`,
-                    `${startYear} ${endYear} 日本`,
-                    `${Math.floor(startYear/10)*10}年代 人気曲`
+                    `${startYear} ${endYear} 日本 音楽`,
+                    `${Math.floor(startYear/10)*10}年代 日本 人気曲`
                 ];
                 
                 let allSongs = [];
@@ -787,9 +783,14 @@
 
         // クイズ開始
         function startQuiz() {
+            // プレイヤーが0人の場合、自動的にデフォルトプレイヤーを追加
             if (players.length === 0) {
-                alert('プレイヤーを追加してください');
-                return;
+                const defaultPlayer = {id: Date.now(), name: 'プレイヤー1'};
+                players.push(defaultPlayer);
+                scores[defaultPlayer.id] = 0;
+                savePlayers();
+                saveScores();
+                renderPlayerList();
             }
             
             if (selectedSongs.length === 0) {
