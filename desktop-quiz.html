@@ -603,34 +603,84 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4">🔍 「${theme}」を検索中...</p>`;
             
             try {
-                let searchTerm;
+                let allSongs = [];
                 
-                // 童謡は特別な検索クエリを使用
+                // 童謡は複数の具体的な曲名で検索
                 if (theme === '童謡') {
-                    searchTerm = '童謡 こども';
+                    const childrenSongs = [
+                        'ぞうさん', 'チューリップ', 'どんぐりころころ', 'かたつむり',
+                        'ちょうちょう', 'むすんでひらいて', 'きらきら星', 'ももたろう',
+                        'うさぎとかめ', 'こいのぼり', 'しゃぼん玉', 'あめふり',
+                        'うみ', 'はと', 'ゆき', 'たなばたさま',
+                        'おおきなくりのきのしたで', 'おもちゃのチャチャチャ'
+                    ];
+                    
+                    // 複数の童謡を検索
+                    for (const songName of childrenSongs) {
+                        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(songName + ' 童謡')}&media=music&limit=10&country=JP`;
+                        try {
+                            const data = await fetchJsonp(url, 10000);
+                            const validSongs = data.results.filter(song => {
+                                if (!song.previewUrl) return false;
+                                
+                                // アーティスト名で童謡かチェック
+                                const artist = song.artistName.toLowerCase();
+                                
+                                // 童謡らしいアーティスト名のキーワード
+                                const validKeywords = ['童謡', 'こども', '子供', '子ども', '合唱', '唱歌', 'ようちえん', '幼稚園'];
+                                const hasValidKeyword = validKeywords.some(keyword => artist.includes(keyword));
+                                
+                                // NGアーティスト（J-POPアーティスト）
+                                const ngArtists = ['lisa', 'back number', 'yoasobi', 'ado', 'official', 'millennium parade', 'キング・クリムゾン'];
+                                const isNgArtist = ngArtists.some(ng => artist.includes(ng));
+                                
+                                return hasValidKeyword && !isNgArtist;
+                            });
+                            allSongs = allSongs.concat(validSongs);
+                        } catch (error) {
+                            console.log(`${songName}の検索でエラー:`, error);
+                        }
+                    }
+                    
+                    // 重複を削除
+                    const uniqueSongs = allSongs.filter((song, index, self) =>
+                        index === self.findIndex(s => s.trackId === song.trackId)
+                    );
+                    
+                    console.log(`童謡: ${uniqueSongs.length}曲見つかりました`);
+                    
+                    if (uniqueSongs.length === 0) {
+                        alert('童謡が見つかりませんでした。');
+                        resultsDiv.innerHTML = '';
+                        return;
+                    }
+                    
+                    const numSongs = Math.min(10, uniqueSongs.length);
+                    selectedSongs = shuffleArray([...uniqueSongs]).slice(0, numSongs);
+                    
                 } else {
-                    // その他のテーマは「日本」を追加して邦楽限定に
-                    searchTerm = `${theme} 日本`;
+                    // その他のテーマは従来通り
+                    const searchTerm = `${theme} 日本`;
+                    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&limit=50&country=JP`;
+                    
+                    console.log('テーマ検索URL:', url);
+                    
+                    const data = await fetchJsonp(url);
+                    
+                    console.log('テーマ検索結果:', data);
+                    
+                    const songsWithPreview = data.results.filter(song => song.previewUrl);
+                    
+                    if (songsWithPreview.length === 0) {
+                        alert('プレビュー可能な曲が見つかりませんでした。別のテーマを試してください。');
+                        resultsDiv.innerHTML = '';
+                        return;
+                    }
+                    
+                    const numSongs = Math.min(10, songsWithPreview.length);
+                    selectedSongs = shuffleArray([...songsWithPreview]).slice(0, numSongs);
                 }
                 
-                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&limit=50&country=JP`;
-                
-                console.log('テーマ検索URL:', url);
-                
-                const data = await fetchJsonp(url);
-                
-                console.log('テーマ検索結果:', data);
-                
-                const songsWithPreview = data.results.filter(song => song.previewUrl);
-                
-                if (songsWithPreview.length === 0) {
-                    alert('プレビュー可能な曲が見つかりませんでした。別のテーマを試してください。');
-                    resultsDiv.innerHTML = '';
-                    return;
-                }
-                
-                const numSongs = Math.min(10, songsWithPreview.length);
-                selectedSongs = shuffleArray([...songsWithPreview]).slice(0, numSongs);
                 updateSelectedSongsList();
                 resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${selectedSongs.length}曲を自動選択しました！<br><span class="text-sm">曲リストから不要な曲を削除できます</span></p>`;
                 
