@@ -603,8 +603,16 @@
             resultsDiv.innerHTML = `<p class="text-white text-center py-4">🔍 「${theme}」を検索中...</p>`;
             
             try {
-                // テーマ検索に「日本」を追加して邦楽限定に
-                const searchTerm = `${theme} 日本`;
+                let searchTerm;
+                
+                // 童謡は特別な検索クエリを使用
+                if (theme === '童謡') {
+                    searchTerm = '童謡 こども';
+                } else {
+                    // その他のテーマは「日本」を追加して邦楽限定に
+                    searchTerm = `${theme} 日本`;
+                }
+                
                 const url = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&limit=50&country=JP`;
                 
                 console.log('テーマ検索URL:', url);
@@ -624,7 +632,7 @@
                 const numSongs = Math.min(10, songsWithPreview.length);
                 selectedSongs = shuffleArray([...songsWithPreview]).slice(0, numSongs);
                 updateSelectedSongsList();
-                resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${selectedSongs.length}曲を自動選択しました！</p>`;
+                resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${selectedSongs.length}曲を自動選択しました！<br><span class="text-sm">曲リストから不要な曲を削除できます</span></p>`;
                 
             } catch (error) {
                 console.error('テーマ検索エラー:', error);
@@ -689,9 +697,9 @@
                 const numSongs = Math.min(10, uniqueSongs.length);
                 selectedSongs = shuffleArray([...uniqueSongs]).slice(0, numSongs);
                 updateSelectedSongsList();
-                resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${startYear}年代の曲を${selectedSongs.length}曲選択しました！</p>`;
+                resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${startYear}年代の曲を${selectedSongs.length}曲選択しました！<br><span class="text-sm">曲リストから不要な曲を削除したり、検索して追加できます</span></p>`;
                 
-                setTimeout(startQuiz, 1000);
+                // 自動開始を削除 - ユーザーが手動で「クイズ開始」ボタンを押せるようにする
                 
             } catch (error) {
                 console.error('年代検索エラー:', error);
@@ -711,7 +719,7 @@
             selectedSongs = shuffleArray([...artistSongs]).slice(0, numSongs);
             updateSelectedSongsList();
             
-            setTimeout(startQuiz, 500);
+            // 自動開始を削除 - ユーザーが手動で「クイズ開始」ボタンを押せるようにする
         }
 
         // 曲を追加
