@@ -175,6 +175,12 @@
                             >
                                 👶 童謡
                             </button>
+                            <button 
+                                onclick="startThemeQuiz('演歌')"
+                                class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-xl font-bold hover:shadow-xl transition-all transform hover:scale-105"
+                            >
+                                🎤 演歌
+                            </button>
                         </div>
                     </div>
                     
@@ -642,21 +648,45 @@
                         }
                     }
                     
-                    // 重複を削除
-                    const uniqueSongs = allSongs.filter((song, index, self) =>
-                        index === self.findIndex(s => s.trackId === song.trackId)
-                    );
+                } else if (theme === 'アニメソング') {
+                    // アニメソングも具体的な曲名で検索
+                    const animeSongs = [
+                        '残酷な天使のテーゼ', 'タッチ', 'ルパン三世', '紅蓮華',
+                        '炎', 'アンパンマンのマーチ', 'ドラえもんのうた', 'サザエさん',
+                        'おどるポンポコリン', 'ゲゲゲの鬼太郎', 'めざせポケモンマスター',
+                        'ムーンライト伝説', 'タッチ', '宇宙戦艦ヤマト', 'マジンガーZ',
+                        'CAT\'S EYE', '紅', 'シルエット', 'インフェルノ', '千本桜'
+                    ];
                     
-                    console.log(`童謡: ${uniqueSongs.length}曲見つかりました`);
-                    
-                    if (uniqueSongs.length === 0) {
-                        alert('童謡が見つかりませんでした。');
-                        resultsDiv.innerHTML = '';
-                        return;
+                    for (const songName of animeSongs) {
+                        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(songName + ' アニメ')}&media=music&limit=10&country=JP`;
+                        try {
+                            const data = await fetchJsonp(url, 10000);
+                            const validSongs = data.results.filter(song => song.previewUrl);
+                            allSongs = allSongs.concat(validSongs);
+                        } catch (error) {
+                            console.log(`${songName}の検索でエラー:`, error);
+                        }
                     }
                     
-                    const numSongs = Math.min(10, uniqueSongs.length);
-                    selectedSongs = shuffleArray([...uniqueSongs]).slice(0, numSongs);
+                } else if (theme === '演歌') {
+                    // 演歌は有名な演歌歌手で検索
+                    const enkaArtists = [
+                        '石川さゆり', '氷川きよし', '北島三郎', '五木ひろし',
+                        '坂本冬美', '細川たかし', '森進一', '森昌子',
+                        '八代亜紀', '小林幸子', '美空ひばり', '都はるみ'
+                    ];
+                    
+                    for (const artist of enkaArtists) {
+                        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artist)}&media=music&limit=20&country=JP`;
+                        try {
+                            const data = await fetchJsonp(url, 10000);
+                            const validSongs = data.results.filter(song => song.previewUrl);
+                            allSongs = allSongs.concat(validSongs);
+                        } catch (error) {
+                            console.log(`${artist}の検索でエラー:`, error);
+                        }
+                    }
                     
                 } else {
                     // その他のテーマは従来通り
@@ -669,26 +699,54 @@
                     
                     console.log('テーマ検索結果:', data);
                     
-                    const songsWithPreview = data.results.filter(song => song.previewUrl);
-                    
-                    if (songsWithPreview.length === 0) {
-                        alert('プレビュー可能な曲が見つかりませんでした。別のテーマを試してください。');
-                        resultsDiv.innerHTML = '';
-                        return;
-                    }
-                    
-                    const numSongs = Math.min(10, songsWithPreview.length);
-                    selectedSongs = shuffleArray([...songsWithPreview]).slice(0, numSongs);
+                    allSongs = data.results.filter(song => song.previewUrl);
                 }
                 
-                updateSelectedSongsList();
-                resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${selectedSongs.length}曲を自動選択しました！<br><span class="text-sm">曲リストから不要な曲を削除できます</span></p>`;
+                // 重複を削除
+                const uniqueSongs = allSongs.filter((song, index, self) =>
+                    index === self.findIndex(s => s.trackId === song.trackId)
+                );
+                
+                console.log(`${theme}: ${uniqueSongs.length}曲見つかりました`);
+                
+                if (uniqueSongs.length === 0) {
+                    alert(`${theme}の曲が見つかりませんでした。`);
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+                
+                // 検索結果を表示（追加ボタン付き）
+                displayThemeResults(uniqueSongs, theme);
                 
             } catch (error) {
                 console.error('テーマ検索エラー:', error);
                 alert(`検索に失敗しました: ${error.message}\n\n別のテーマを試してください。`);
                 resultsDiv.innerHTML = '';
             }
+        }
+        
+        // テーマ検索結果を表示
+        function displayThemeResults(songs, theme) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="mb-4">
+                    <p class="text-white text-center py-2">✅ ${theme}から${songs.length}曲見つかりました！</p>
+                    <p class="text-white/70 text-sm text-center">曲をクリックまたは➕ボタンで追加できます</p>
+                </div>
+                ${songs.map(song => `
+                    <div class="bg-white/20 rounded-xl p-3 flex items-center gap-3 hover:bg-white/30 transition-all cursor-pointer" onclick='addSong(${JSON.stringify(song).replace(/'/g, "&apos;")})'>
+                        <img src="${song.artworkUrl60}" alt="${song.trackName}" class="w-16 h-16 rounded-lg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23ccc%22 width=%2260%22 height=%2260%22/%3E%3C/svg%3E'" />
+                        <div class="flex-1 min-w-0">
+                            <div class="text-white font-bold truncate">${song.trackName}</div>
+                            <div class="text-white/80 text-sm truncate">${song.artistName}</div>
+                        </div>
+                        <button class="bg-cyan-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-cyan-600 transition-all">
+                            ➕
+                        </button>
+                    </div>
+                `).join('')}
+            `;
         }
         
         // 年代別クイズ（リリース年でフィルタリング）
@@ -744,12 +802,8 @@
                     return;
                 }
                 
-                const numSongs = Math.min(10, uniqueSongs.length);
-                selectedSongs = shuffleArray([...uniqueSongs]).slice(0, numSongs);
-                updateSelectedSongsList();
-                resultsDiv.innerHTML = `<p class="text-white text-center py-4">✅ ${startYear}年代の曲を${selectedSongs.length}曲選択しました！<br><span class="text-sm">曲リストから不要な曲を削除したり、検索して追加できます</span></p>`;
-                
-                // 自動開始を削除 - ユーザーが手動で「クイズ開始」ボタンを押せるようにする
+                // 検索結果を表示（追加ボタン付き）
+                displayThemeResults(uniqueSongs, `${startYear}年代`);
                 
             } catch (error) {
                 console.error('年代検索エラー:', error);
@@ -760,16 +814,8 @@
         
         // アーティスト別クイズを開始
         function startArtistQuiz(artistSongs) {
-            if (players.length === 0) {
-                alert('プレイヤーを追加してください');
-                return;
-            }
-            
-            const numSongs = Math.min(10, artistSongs.length);
-            selectedSongs = shuffleArray([...artistSongs]).slice(0, numSongs);
-            updateSelectedSongsList();
-            
-            // 自動開始を削除 - ユーザーが手動で「クイズ開始」ボタンを押せるようにする
+            // 検索結果を表示（追加ボタン付き）
+            displayThemeResults(artistSongs, 'アーティスト');
         }
 
         // 曲を追加
