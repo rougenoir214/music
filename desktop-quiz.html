@@ -289,12 +289,18 @@
                 </div>
 
                 <!-- コントロールボタン -->
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
                     <button 
-                        onclick="showAnswer()"
+                        onclick="showAnswerOnly()"
                         class="glass-effect text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-white/30 transition-all"
                     >
-                        💡 答えを表示
+                        👁️ 答えを見る
+                    </button>
+                    <button 
+                        onclick="playFullAnswer()"
+                        class="glass-effect text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-white/30 transition-all"
+                    >
+                        🎵 全曲再生
                     </button>
                     <button 
                         onclick="nextQuestion()"
@@ -1014,14 +1020,24 @@
         }
 
         // 答えを表示
-        function showAnswer() {
+        // 答えだけを表示（曲は流さない）
+        function showAnswerOnly() {
             const song = selectedSongs[currentQuestionIndex];
             const titleElement = document.getElementById('currentSongTitle');
             titleElement.textContent = `♪ ${song.trackName} - ${song.artistName}`;
             titleElement.classList.remove('hidden');
-            
+        }
+        
+        // 答えを表示して全曲再生
+        function playFullAnswer() {
+            showAnswerOnly();
             document.getElementById('playFullBtn').classList.remove('hidden');
             playFull();
+        }
+        
+        // 既存のshowAnswer関数（後方互換性のため残す）
+        function showAnswer() {
+            playFullAnswer();
         }
 
         // 次の問題
