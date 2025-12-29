@@ -196,6 +196,26 @@
                     >
                         🗑️ 選択した曲をクリア
                     </button>
+                    
+                    <!-- 曲リスト保存・読み込み -->
+                    <div class="mt-3 grid grid-cols-2 gap-3">
+                        <button 
+                            onclick="saveSongList()"
+                            class="bg-blue-500/80 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                        >
+                            💾 曲リストを保存
+                        </button>
+                        <label class="bg-green-500/80 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold transition-all cursor-pointer text-center">
+                            📂 曲リストを読み込む
+                            <input 
+                                type="file" 
+                                id="loadSongListFile" 
+                                accept=".json"
+                                onchange="loadSongList(event)"
+                                class="hidden"
+                            />
+                        </label>
+                    </div>
                 </div>
 
                 <!-- クイズ設定 -->
@@ -1118,6 +1138,82 @@
                 [array[i], array[j]] = [array[j], array[i]];
             }
             return array;
+        }
+        
+        // 曲リストをファイルとして保存
+        function saveSongList() {
+            if (selectedSongs.length === 0) {
+                alert('保存する曲がありません');
+                return;
+            }
+            
+            const data = {
+                version: '1.0',
+                savedAt: new Date().toISOString(),
+                songCount: selectedSongs.length,
+                songs: selectedSongs
+            };
+            
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quiz-songs-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`✅ ${selectedSongs.length}曲を保存しました！`);
+        }
+        
+        // 曲リストをファイルから読み込む
+        function loadSongList(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.songs || !Array.isArray(data.songs)) {
+                        throw new Error('無効なファイル形式です');
+                    }
+                    
+                    // 既存の曲がある場合は確認
+                    if (selectedSongs.length > 0) {
+                        if (!confirm(`現在${selectedSongs.length}曲が選択されています。\n\n「OK」→ クリアして読み込む\n「キャンセル」→ 既存の曲に追加`)) {
+                            // 既存の曲に追加
+                            data.songs.forEach(song => {
+                                if (!selectedSongs.find(s => s.trackId === song.trackId)) {
+                                    selectedSongs.push(song);
+                                }
+                            });
+                        } else {
+                            // クリアして読み込む
+                            selectedSongs = data.songs;
+                        }
+                    } else {
+                        selectedSongs = data.songs;
+                    }
+                    
+                    localStorage.setItem('quizSelectedSongs', JSON.stringify(selectedSongs));
+                    updateSelectedSongsList();
+                    
+                    alert(`✅ ${data.songs.length}曲を読み込みました！\n合計: ${selectedSongs.length}曲`);
+                    
+                } catch (error) {
+                    console.error('読み込みエラー:', error);
+                    alert('❌ ファイルの読み込みに失敗しました: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            // ファイル選択をリセット（同じファイルを再度選択できるように）
+            event.target.value = '';
         }
     </script>
 </body>
